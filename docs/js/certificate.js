@@ -68,7 +68,18 @@
   }).join('');
 
   $('#doc').classList.remove('hidden');
-  $('#printBtn').addEventListener('click', () => window.print());
+  if (isFramed()) {
+    $('#openTabLink').href = location.href;
+    $('#frameNotice').classList.remove('hidden');
+  }
+  $('#printBtn').addEventListener('click', () => {
+    const t = Date.now();
+    try { window.print(); } catch (e) { /* 框架限制時可能丟出例外 */ }
+    // 列印視窗正常開啟時會暫停程式；若立即返回，表示可能被框架封鎖
+    if (Date.now() - t < 300 && isFramed()) {
+      uiAlert('若沒有出現列印視窗，請點選頁面上方的「在新分頁開啟證書」，再按「列印／另存 PDF」。', { title: '列印提示', okText: '知道了' });
+    }
+  });
   $('#pngBtn').addEventListener('click', downloadPng);
 
   // 以 Canvas 繪製證書圖片（A4 橫式，150 dpi）
@@ -129,10 +140,14 @@
     cv.toBlob((blob) => {
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
+      // 同時在頁面顯示圖片，下載被瀏覽器或框架封鎖時可手動另存
+      $('#pngImg').src = a.href;
+      $('#pngPreview').classList.remove('hidden');
+      $('#pngPreview').scrollIntoView({ behavior: 'smooth', block: 'start' });
       a.download = `${d.certNo}_${p.name}.png`;
       document.body.appendChild(a);
       a.click();
-      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      setTimeout(() => a.remove(), 1000);
     }, 'image/png');
   }
 

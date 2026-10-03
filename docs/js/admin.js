@@ -44,11 +44,17 @@
 
   let lastHash = location.hash;
   window.addEventListener('hashchange', () => {
-    if (dirty && !confirm('課程尚未儲存，確定要離開嗎？')) {
+    if (dirty) {
+      // 先回到原頁面，確認後再前往
+      const target = location.hash;
       history.replaceState(null, '', lastHash);
+      uiConfirm('課程尚未儲存，確定要離開嗎？', { okText: '放棄修改並離開', danger: true }).then((ok) => {
+        if (!ok) return;
+        dirty = false;
+        location.hash = target;
+      });
       return;
     }
-    dirty = false;
     lastHash = location.hash;
     route();
   });
@@ -85,7 +91,7 @@
 
   $('#logoutBtn').addEventListener('click', async (e) => {
     e.preventDefault();
-    if (dirty && !confirm('課程尚未儲存，確定要登出嗎？')) return;
+    if (dirty && !(await uiConfirm('課程尚未儲存，確定要登出嗎？', { okText: '登出', danger: true }))) return;
     dirty = false;
     try { await api('logout'); } catch (err) { /* 已過期亦視為登出 */ }
     adminToken(null);
@@ -129,7 +135,7 @@
       if (c) { toast('已複製課程（預設為未開放）'); loadCourses(); }
     }
     if (t.dataset.del) {
-      if (!confirm(`確定刪除課程「${t.dataset.name}」？\n題庫將一併刪除（已發出的證書與測驗紀錄會保留）。`)) return;
+      if (!(await uiConfirm(`確定刪除課程「${t.dataset.name}」？\n題庫將一併刪除（已發出的證書與測驗紀錄會保留）。`, { okText: '刪除', danger: true }))) return;
       const r = await guard(() => api('deleteCourse', { id: t.dataset.del }));
       if (r) { toast('已刪除'); loadCourses(); }
     }
@@ -266,7 +272,14 @@
       case 'up': [qs[n - 1], qs[n]] = [qs[n], qs[n - 1]]; break;
       case 'down': [qs[n + 1], qs[n]] = [qs[n], qs[n + 1]]; break;
       case 'copy': qs.splice(n + 1, 0, { ...JSON.parse(JSON.stringify(q)), id: '' }); break;
-      case 'remove': if (!confirm(`確定刪除第 ${n + 1} 題？`)) return; qs.splice(n, 1); break;
+      case 'remove':
+        uiConfirm(`確定刪除第 ${n + 1} 題？`, { okText: '刪除', danger: true }).then((ok) => {
+          if (!ok) return;
+          qs.splice(n, 1);
+          dirty = true;
+          renderQuestions();
+        });
+        return;
       case 'addopt': q.options.push(''); break;
       case 'delopt': {
         const i = Number(b.dataset.i);
@@ -439,7 +452,7 @@
   $('#attemptRows').addEventListener('click', async (e) => {
     const id = e.target.dataset.delAttempt;
     if (!id) return;
-    if (!confirm(`確定刪除「${e.target.dataset.name}」的測驗紀錄？\n（例如依當事人請求刪除個資；刪除後證書將無法查驗）`)) return;
+    if (!(await uiConfirm(`確定刪除「${e.target.dataset.name}」的測驗紀錄？\n（例如依當事人請求刪除個資；刪除後證書將無法查驗）`, { okText: '刪除', danger: true }))) return;
     const r = await guard(() => api('deleteAttempt', { id }));
     if (r) { toast('已刪除'); loadAttempts(); }
   });
@@ -467,13 +480,13 @@
   $('#catRows').addEventListener('click', async (e) => {
     const t = e.target;
     if (t.dataset.rename) {
-      const name = prompt('新的類別名稱', t.dataset.name);
+      const name = await uiPrompt('新的類別名稱', t.dataset.name);
       if (!name) return;
       const r = await guard(() => api('saveCategory', { id: t.dataset.rename, name }));
       if (r) loadCategories();
     }
     if (t.dataset.delCat) {
-      if (!confirm(`確定刪除類別「${t.dataset.name}」？`)) return;
+      if (!(await uiConfirm(`確定刪除類別「${t.dataset.name}」？`, { okText: '刪除', danger: true }))) return;
       const r = await guard(() => api('deleteCategory', { id: t.dataset.delCat }));
       if (r) loadCategories();
     }

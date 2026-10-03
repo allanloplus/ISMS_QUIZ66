@@ -85,3 +85,61 @@ async function loadSiteInfo() {
 function certificateUrl(id, token) {
   return `certificate.html?id=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`;
 }
+
+// ---------------- 網頁內建對話框 ----------------
+// 嵌入 Google 協作平台（Google Sites）等 iframe 時，瀏覽器會封鎖 confirm()／alert()／prompt()，
+// 因此改用網頁自行繪製的對話框（回傳 Promise）。
+function uiDialog({ message, title = '', okText = '確定', cancelText = '取消', danger = false, input = null }) {
+  return new Promise((resolve) => {
+    const prevFocus = document.activeElement;
+    const overlay = document.createElement('div');
+    overlay.className = 'ui-dialog-overlay';
+    overlay.innerHTML = `
+      <div class="ui-dialog" role="dialog" aria-modal="true" aria-labelledby="uiDialogMsg">
+        ${title ? `<h3>${esc(title)}</h3>` : ''}
+        <p id="uiDialogMsg" class="ui-dialog-msg">${esc(message)}</p>
+        ${input !== null ? `<input type="text" class="ui-dialog-input" value="${esc(input)}">` : ''}
+        <div class="ui-dialog-actions">
+          ${cancelText ? `<button type="button" class="btn secondary" data-r="cancel">${esc(cancelText)}</button>` : ''}
+          <button type="button" class="btn${danger ? ' danger-solid' : ''}" data-r="ok">${esc(okText)}</button>
+        </div>
+      </div>`;
+    const field = $('.ui-dialog-input', overlay);
+    const close = (ok) => {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey, true);
+      if (prevFocus && prevFocus.focus) prevFocus.focus();
+      if (input !== null) resolve(ok ? field.value : null);
+      else resolve(ok);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); close(false); }
+      if (e.key === 'Enter' && (e.target === field || !e.target.closest || !e.target.closest('button'))) { e.preventDefault(); close(true); }
+    };
+    overlay.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-r]');
+      if (b) close(b.dataset.r === 'ok');
+      else if (e.target === overlay && cancelText) close(false);
+    });
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(overlay);
+    // 嵌入框架時，框架可能比可見範圍高；將對話框放在觸發按鈕附近，避免出現在畫面外
+    if (isFramed() && prevFocus && prevFocus.getBoundingClientRect && prevFocus !== document.body) {
+      const box = $('.ui-dialog', overlay);
+      const top = Math.max(16, Math.min(prevFocus.getBoundingClientRect().top - box.offsetHeight - 16, window.innerHeight - box.offsetHeight - 16));
+      overlay.style.alignItems = 'flex-start';
+      box.style.marginTop = `${top}px`;
+    }
+    (field || $('[data-r="ok"]', overlay)).focus();
+    if (field) field.select();
+  });
+}
+
+const uiConfirm = (message, opts = {}) => uiDialog({ message, ...opts });
+const uiAlert = (message, opts = {}) => uiDialog({ message, cancelText: '', ...opts });
+const uiPrompt = (message, value = '', opts = {}) => uiDialog({ message, input: value, ...opts });
+
+/** 是否被嵌在其他網頁（例如 Google 協作平台）的框架中 */
+function isFramed() {
+  try { return window.self !== window.top; } catch (e) { return true; }
+}

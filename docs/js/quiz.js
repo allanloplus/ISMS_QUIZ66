@@ -107,8 +107,10 @@
     e.preventDefault();
     const answers = collectAnswers();
     const unanswered = data.questions.map((q, n) => (answers[q.id].length ? null : n + 1)).filter(Boolean);
-    if (unanswered.length && !confirm(`尚有第 ${unanswered.join('、')} 題未作答，確定要交卷嗎？`)) return;
-    if (!unanswered.length && !confirm('確定要交卷嗎？交卷後將無法修改答案。')) return;
+    const sure = unanswered.length
+      ? await uiConfirm(`尚有第 ${unanswered.join('、')} 題未作答，確定要交卷嗎？`, { title: '尚有題目未作答', okText: '確定交卷', cancelText: '繼續作答' })
+      : await uiConfirm('交卷後將無法修改答案。', { title: '確定要交卷嗎？', okText: '確定交卷', cancelText: '再檢查一下' });
+    if (!sure) return;
     $('#submitBtn').disabled = true;
     $('#submitBtn').textContent = '評分中…';
     $('#quizError').classList.add('hidden');
@@ -133,6 +135,10 @@
           <div class="score">${r.score} <span class="small muted">/ ${r.total} 分</span></div>
           <p>恭喜您通過「${esc(c.name)}」課後測驗！（答對 ${r.correctCount} / ${r.questionCount} 題，及格分數 ${r.passScore} 分）</p>
           <p class="muted small">證書編號：<b>${esc(r.certNo)}</b><br>請下載並妥善保存您的合格證書；證書頁面附有本次測驗題目與解答。</p>
+          <div style="max-width:560px;margin:0 auto" class="small">
+            <label for="certLink" class="muted" style="font-weight:400">證書網址（若按鈕無法開啟，請複製此網址到瀏覽器開啟，亦可保存備查）</label>
+            <input type="text" id="certLink" readonly value="${esc(new URL(certificateUrl(r.attemptId, r.token), location.href).href)}">
+          </div>
           <div class="actions">
             <a class="btn" href="${esc(certificateUrl(r.attemptId, r.token))}" target="_blank" rel="noopener">檢視／下載合格證書</a>
             <a class="btn secondary" href="./">回課程列表</a>
@@ -172,6 +178,8 @@
         show('stepQuiz');
       });
     }
+    const link = $('#certLink');
+    if (link) link.addEventListener('focus', () => link.select());
     show('stepResult');
   }
 

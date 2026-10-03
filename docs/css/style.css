@@ -141,3 +141,12 @@ footer.site { text-align: center; color: var(--muted); font-size: .85rem; paddin
   .options { margin-left: 0; }
   .topbar nav { margin-left: 0; }
 }
+
+/* 網頁內建對話框（取代 confirm／alert／prompt，嵌入 iframe 時也能使用） */
+.ui-dialog-overlay { position: fixed; inset: 0; background: rgba(16, 24, 40, .45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 200; }
+.ui-dialog { background: var(--surface); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0, 0, 0, .25); padding: 22px; width: 100%; max-width: 440px; }
+.ui-dialog h3 { margin-bottom: 8px; }
+.ui-dialog-msg { margin: 0 0 16px; white-space: pre-wrap; }
+.ui-dialog-input { margin-bottom: 16px; }
+.ui-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.btn.danger-solid { background: var(--bad); border-color: var(--bad); color: #fff; }
