@@ -3,21 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'">
   <title>課後測驗 - ISMS 課程課後測驗</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header class="topbar">
     <div class="inner">
-      <a class="brand" href="/"><span class="logo">ISMS</span><span data-site-name>ISMS 課程課後測驗</span></a>
+      <a class="brand" href="./"><span class="logo">ISMS</span><span data-site-name>ISMS 課程課後測驗</span></a>
       <nav>
-        <a href="/">選擇課程</a>
-        <a href="/verify.html">證書查驗</a>
+        <a href="./">選擇課程</a>
+        <a href="verify.html">證書查驗</a>
       </nav>
     </div>
   </header>
 
   <main class="container narrow">
+    <p id="loading" class="muted">載入中…</p>
     <div id="loadError" class="notice error hidden"></div>
 
     <section id="courseInfo" class="card hidden"></section>
@@ -59,7 +61,8 @@
 
   <footer class="site">課程講師：羅宇倫 Allan Lo</footer>
 
-  <script src="/js/common.js"></script>
-  <script src="/js/quiz.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/quiz.js"></script>
 </body>
 </html>

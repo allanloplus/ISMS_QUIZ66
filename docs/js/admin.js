@@ -16,7 +16,7 @@
     try {
       return await fn();
     } catch (e) {
-      if (e.status === 401) { enterLogin(); return undefined; }
+      if (e.code === 'AUTH') { adminToken(null); enterLogin(); return undefined; }
       toast(e.message, true);
       return undefined;
     }
@@ -55,24 +55,31 @@
   window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   async function start() {
-    const me = await api('/api/admin/me');
+    const me = await api('me');
     if (!me.authed) return enterLogin();
     $('#adminNav').classList.remove('hidden');
     $('#pwWarning').classList.toggle('hidden', !me.mustChangePassword);
-    categories = (await guard(() => api('/api/admin/categories'))) || [];
+    categories = (await guard(() => api('categories'))) || [];
     route();
   }
 
   $('#loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const btn = $('#loginForm button');
+    btn.disabled = true;
+    btn.textContent = '登入中…';
     try {
-      await api('/api/admin/login', { method: 'POST', body: { password: $('#password').value } });
+      const r = await api('login', { password: $('#password').value });
+      adminToken(r.token);
       $('#password').value = '';
       $('#loginError').classList.add('hidden');
       start();
     } catch (err) {
       $('#loginError').textContent = err.message;
       $('#loginError').classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '登入';
     }
   });
 
@@ -80,14 +87,16 @@
     e.preventDefault();
     if (dirty && !confirm('課程尚未儲存，確定要登出嗎？')) return;
     dirty = false;
-    await api('/api/admin/logout', { method: 'POST' });
+    try { await api('logout'); } catch (err) { /* 已過期亦視為登出 */ }
+    adminToken(null);
     enterLogin();
   });
 
   // ---------------- 課程列表 ----------------
   async function loadCourses() {
     showView('courses');
-    const list = await guard(() => api('/api/admin/courses'));
+    $('#courseRows').innerHTML = '<tr><td colspan="9" class="muted center">載入中…</td></tr>';
+    const list = await guard(() => api('adminCourses'));
     if (!list) return;
     const catOrder = (id) => categories.findIndex((c) => c.id === id);
     list.sort((a, b) => catOrder(a.categoryId) - catOrder(b.categoryId) || (b.date || '').localeCompare(a.date || ''));
@@ -104,7 +113,7 @@
         <td class="row" style="gap:6px">
           <a class="btn sm" href="#edit/${esc(c.id)}">編輯</a>
           <button class="btn secondary sm" data-dup="${esc(c.id)}" type="button">複製</button>
-          ${c.published ? `<a class="btn secondary sm" href="/quiz.html?course=${encodeURIComponent(c.id)}" target="_blank" rel="noopener">預覽</a>` : ''}
+          ${c.published ? `<a class="btn secondary sm" href="quiz.html?course=${encodeURIComponent(c.id)}" target="_blank" rel="noopener">預覽</a>` : ''}
           <button class="btn danger sm" data-del="${esc(c.id)}" data-name="${esc(c.name)}" type="button">刪除</button>
         </td>
       </tr>`).join('') : '<tr><td colspan="9" class="muted center">尚無課程，請點選「新增課程」。</td></tr>';
@@ -116,12 +125,12 @@
     const t = e.target;
     if (t.dataset.filterCourse) { pendingCourseFilter = t.dataset.filterCourse; return; }
     if (t.dataset.dup) {
-      const c = await guard(() => api(`/api/admin/courses/${t.dataset.dup}/duplicate`, { method: 'POST' }));
+      const c = await guard(() => api('duplicateCourse', { id: t.dataset.dup }));
       if (c) { toast('已複製課程（預設為未開放）'); loadCourses(); }
     }
     if (t.dataset.del) {
       if (!confirm(`確定刪除課程「${t.dataset.name}」？\n題庫將一併刪除（已發出的證書與測驗紀錄會保留）。`)) return;
-      const r = await guard(() => api(`/api/admin/courses/${t.dataset.del}`, { method: 'DELETE' }));
+      const r = await guard(() => api('deleteCourse', { id: t.dataset.del }));
       if (r) { toast('已刪除'); loadCourses(); }
     }
   });
@@ -136,10 +145,10 @@
   }
 
   async function openEditor(id) {
-    if (!categories.length) categories = (await guard(() => api('/api/admin/categories'))) || [];
-    if (!settings.defaultInstructor) settings = (await guard(() => api('/api/admin/settings'))) || {};
+    if (!categories.length) categories = (await guard(() => api('categories'))) || [];
+    if (!settings.defaultInstructor) settings = (await guard(() => api('getSettings'))) || {};
     if (id) {
-      const c = await guard(() => api(`/api/admin/courses/${id}`));
+      const c = await guard(() => api('getCourse', { id }));
       if (!c) { location.hash = '#courses'; return; }
       editing = c;
     } else {
@@ -333,9 +342,10 @@
     for (const k of ['shuffleQuestions', 'shuffleOptions', 'published']) body[k] = $('#f_' + k).checked;
     if (body.published && !body.questions.length) return toast('題庫至少需要 1 題才能開放測驗', true);
     $('#saveBtn').disabled = true;
-    const saved = await guard(() => api(editing.id ? `/api/admin/courses/${editing.id}` : '/api/admin/courses',
-      { method: editing.id ? 'PUT' : 'POST', body }));
+    $('#saveBtn').textContent = '儲存中…';
+    const saved = await guard(() => api('saveCourse', { course: body }));
     $('#saveBtn').disabled = false;
+    $('#saveBtn').textContent = '儲存課程';
     if (!saved) return;
     toast('課程已儲存');
     dirty = false;
@@ -352,28 +362,32 @@
   // ---------------- 測驗紀錄 ----------------
   let pendingCourseFilter = '';
 
-  function attemptQuery() {
-    const p = new URLSearchParams();
-    if ($('#a_course').value) p.set('courseId', $('#a_course').value);
-    if ($('#a_status').value) p.set('status', $('#a_status').value);
-    if ($('#a_q').value.trim()) p.set('q', $('#a_q').value.trim());
-    return p.toString();
+  let allAttempts = [];
+
+  function filteredAttempts() {
+    const courseId = $('#a_course').value;
+    const status = $('#a_status').value;
+    const kw = $('#a_q').value.trim().toLowerCase();
+    return allAttempts.filter((a) => (!courseId || a.courseId === courseId)
+      && (!status || (status === 'passed') === a.passed)
+      && (!kw || [a.participant.company, a.participant.dept, a.participant.name, a.participant.title, a.participant.email, a.certNo]
+        .some((v) => String(v || '').toLowerCase().includes(kw))));
   }
 
   async function loadAttempts(keepFilter) {
     showView('attempts');
     if (!keepFilter) {
-      const courses = (await guard(() => api('/api/admin/courses'))) || [];
+      $('#attemptRows').innerHTML = '<tr><td colspan="11" class="muted center">載入中…</td></tr>';
+      const [courses, list] = await Promise.all([guard(() => api('adminCourses')), guard(() => api('attempts'))]);
+      if (!courses || !list) return;
       const cur = pendingCourseFilter || $('#a_course').value;
       $('#a_course').innerHTML = '<option value="">全部課程</option>' +
         courses.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
       $('#a_course').value = courses.some((c) => c.id === cur) ? cur : '';
       pendingCourseFilter = '';
+      allAttempts = list;
     }
-    const qs = attemptQuery();
-    $('#csvBtn').href = '/api/admin/attempts.csv' + (qs ? '?' + qs : '');
-    const list = await guard(() => api('/api/admin/attempts' + (qs ? '?' + qs : '')));
-    if (!list) return;
+    const list = filteredAttempts();
     const passed = list.filter((a) => a.passed).length;
     $('#attemptStats').textContent = `共 ${list.length} 筆，通過 ${passed} 筆，未通過 ${list.length - passed} 筆` +
       (list.length ? `，通過率 ${Math.round((passed / list.length) * 1000) / 10}%` : '');
@@ -390,11 +404,34 @@
         <td>${a.passed ? '<span class="badge ok">通過</span>' : '<span class="badge bad">未通過</span>'}</td>
         <td style="white-space:nowrap">${esc(a.certNo || '—')}</td>
         <td class="row" style="gap:6px">
-          ${a.certificateUrl ? `<a class="btn sm" href="${esc(a.certificateUrl)}" target="_blank" rel="noopener">證書</a>` : ''}
+          ${a.passed ? `<a class="btn sm" href="${esc(certificateUrl(a.id, a.token))}" target="_blank" rel="noopener">證書</a>` : ''}
           <button class="btn danger sm" type="button" data-del-attempt="${esc(a.id)}" data-name="${esc(a.participant.name)}">刪除</button>
         </td>
       </tr>`).join('') : '<tr><td colspan="11" class="muted center">沒有符合條件的紀錄</td></tr>';
   }
+
+  // 匯出 CSV（UTF-8 BOM，Excel 可直接開啟；防範公式注入）
+  $('#csvBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    const cell = (v) => {
+      let s = v == null ? '' : String(v);
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return '"' + s.replace(/"/g, '""') + '"';
+    };
+    const head = ['測驗時間', '課程名稱', '課程類別', '上課日期', '講師', '公司名稱', '單位', '姓名', '職稱', 'E-mail', '得分', '總分', '及格分數', '結果', '證書編號', '作答秒數'];
+    const rows = filteredAttempts().map((a) => [
+      fmtDateTime(a.createdAt), a.courseName, a.categoryName, a.courseDate, a.instructor, a.participant.company,
+      a.participant.dept, a.participant.name, a.participant.title, a.participant.email, a.score, a.total, a.passScore,
+      a.passed ? '通過' : '未通過', a.certNo || '', a.durationSec ?? '',
+    ]);
+    const csv = '\uFEFF' + [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    link.download = `測驗紀錄-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => { URL.revokeObjectURL(link.href); link.remove(); }, 1000);
+  });
 
   $('#attemptFilter').addEventListener('submit', (e) => { e.preventDefault(); loadAttempts(true); });
   $('#a_course').addEventListener('change', () => loadAttempts(true));
@@ -403,14 +440,14 @@
     const id = e.target.dataset.delAttempt;
     if (!id) return;
     if (!confirm(`確定刪除「${e.target.dataset.name}」的測驗紀錄？\n（例如依當事人請求刪除個資；刪除後證書將無法查驗）`)) return;
-    const r = await guard(() => api(`/api/admin/attempts/${id}`, { method: 'DELETE' }));
-    if (r) { toast('已刪除'); loadAttempts(true); }
+    const r = await guard(() => api('deleteAttempt', { id }));
+    if (r) { toast('已刪除'); loadAttempts(); }
   });
 
   // ---------------- 類別 ----------------
   async function loadCategories() {
     showView('categories');
-    const list = await guard(() => api('/api/admin/categories'));
+    const list = await guard(() => api('categories'));
     if (!list) return;
     categories = list;
     $('#catRows').innerHTML = list.map((c) => `
@@ -423,7 +460,7 @@
 
   $('#catForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const r = await guard(() => api('/api/admin/categories', { method: 'POST', body: { name: $('#catName').value } }));
+    const r = await guard(() => api('saveCategory', { name: $('#catName').value }));
     if (r) { $('#catName').value = ''; toast('已新增類別'); loadCategories(); }
   });
 
@@ -432,12 +469,12 @@
     if (t.dataset.rename) {
       const name = prompt('新的類別名稱', t.dataset.name);
       if (!name) return;
-      const r = await guard(() => api(`/api/admin/categories/${t.dataset.rename}`, { method: 'PUT', body: { name } }));
+      const r = await guard(() => api('saveCategory', { id: t.dataset.rename, name }));
       if (r) loadCategories();
     }
     if (t.dataset.delCat) {
       if (!confirm(`確定刪除類別「${t.dataset.name}」？`)) return;
-      const r = await guard(() => api(`/api/admin/categories/${t.dataset.delCat}`, { method: 'DELETE' }));
+      const r = await guard(() => api('deleteCategory', { id: t.dataset.delCat }));
       if (r) loadCategories();
     }
   });
@@ -446,7 +483,7 @@
   const SETTING_KEYS = ['siteName', 'issuer', 'certTitle', 'certPrefix', 'defaultInstructor', 'privacyNotice'];
   async function loadSettings() {
     showView('settings');
-    const s = await guard(() => api('/api/admin/settings'));
+    const s = await guard(() => api('getSettings'));
     if (!s) return;
     settings = s;
     SETTING_KEYS.forEach((k) => { $('#s_' + k).value = s[k] || ''; });
@@ -455,14 +492,14 @@
   $('#settingsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const body = Object.fromEntries(SETTING_KEYS.map((k) => [k, $('#s_' + k).value]));
-    const r = await guard(() => api('/api/admin/settings', { method: 'PUT', body }));
+    const r = await guard(() => api('saveSettings', { settings: body }));
     if (r) { toast('設定已儲存'); settings = { ...settings, ...body }; }
   });
 
   $('#pwForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if ($('#pw_next').value !== $('#pw_confirm').value) return toast('兩次輸入的新密碼不一致', true);
-    const r = await guard(() => api('/api/admin/password', { method: 'POST', body: { current: $('#pw_current').value, next: $('#pw_next').value } }));
+    const r = await guard(() => api('password', { current: $('#pw_current').value, next: $('#pw_next').value }));
     if (r) {
       toast('密碼已變更');
       $$('#pwForm input').forEach((i) => { i.value = ''; });
@@ -470,5 +507,9 @@
     }
   });
 
-  start().catch((e) => toast(e.message, true));
+  start().catch((e) => {
+    enterLogin();
+    $('#loginError').textContent = e.message;
+    $('#loginError').classList.remove('hidden');
+  });
 })();

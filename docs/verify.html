@@ -3,16 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'">
   <title>證書查驗 - ISMS 課程課後測驗</title>
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header class="topbar">
     <div class="inner">
-      <a class="brand" href="/"><span class="logo">ISMS</span><span data-site-name>ISMS 課程課後測驗</span></a>
+      <a class="brand" href="./"><span class="logo">ISMS</span><span data-site-name>ISMS 課程課後測驗</span></a>
       <nav>
-        <a href="/">選擇課程</a>
-        <a href="/verify.html" class="active">證書查驗</a>
+        <a href="./">選擇課程</a>
+        <a href="verify.html" class="active">證書查驗</a>
       </nav>
     </div>
   </header>
@@ -27,7 +28,8 @@
       <div id="result" style="margin-top:16px"></div>
     </div>
   </main>
-  <script src="/js/common.js"></script>
-  <script src="/js/verify.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/verify.js"></script>
 </body>
 </html>

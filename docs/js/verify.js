@@ -4,7 +4,8 @@
   async function check(no) {
     const out = $('#result');
     try {
-      const r = await api(`/api/public/verify/${encodeURIComponent(no.trim())}`);
+      out.innerHTML = '<p class="muted">查驗中…</p>';
+      const r = await api('verify', { certNo: no.trim() });
       out.innerHTML = r.valid
         ? `<div class="notice info"><span class="badge ok">有效證書</span>
             <table class="data" style="margin-top:10px">

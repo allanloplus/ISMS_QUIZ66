@@ -3,20 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'">
   <title>合格證書</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="stylesheet" href="/css/certificate.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/certificate.css">
 </head>
 <body>
   <div class="toolbar no-print">
     <div class="inner">
-      <a href="/" class="btn secondary sm">← 回課程列表</a>
+      <a href="./" class="btn secondary sm">← 回課程列表</a>
       <span class="spacer"></span>
       <button class="btn sm" id="pngBtn" type="button">下載證書圖片（PNG）</button>
       <button class="btn sm" id="printBtn" type="button">列印／另存 PDF（含題目解答）</button>
     </div>
   </div>
 
+  <p id="loading" class="container narrow muted">證書載入中…</p>
   <div id="error" class="container narrow hidden"><div class="notice error"></div></div>
 
   <div id="doc" class="hidden">
@@ -48,7 +50,8 @@
     </section>
   </div>
 
-  <script src="/js/common.js"></script>
-  <script src="/js/certificate.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/certificate.js"></script>
 </body>
 </html>

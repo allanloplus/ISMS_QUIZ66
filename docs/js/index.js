@@ -1,9 +1,10 @@
 'use strict';
 (async function () {
-  const info = await loadSiteInfo();
+  let info;
   let courses = [];
   try {
-    courses = await api('/api/public/courses');
+    ({ info, courses } = await api('home'));
+    applySiteInfo(info);
   } catch (e) {
     $('#courses').innerHTML = `<div class="notice error">${esc(e.message)}</div>`;
     return;
@@ -35,7 +36,7 @@
           <div>題數：${c.questionCount} 題　總分 ${c.totalPoints} 分　及格 ${c.passScore} 分</div>
         </div>
         <p class="desc">${esc(c.description)}</p>
-        <a class="btn block" href="/quiz.html?course=${encodeURIComponent(c.id)}">開始課後測驗</a>
+        <a class="btn block" href="quiz.html?course=${encodeURIComponent(c.id)}">開始課後測驗</a>
       </article>`).join('');
   }
 

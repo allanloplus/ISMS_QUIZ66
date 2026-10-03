@@ -6,15 +6,18 @@
   let data;
   let startedAt = null;
 
-  const info = await loadSiteInfo();
   try {
     if (!courseId) throw new Error('未指定課程，請回首頁選擇課程。');
-    data = await api(`/api/public/courses/${encodeURIComponent(courseId)}/quiz`);
+    data = await api('quiz', { courseId });
   } catch (e) {
-    $('#loadError').innerHTML = `${esc(e.message)}　<a href="/">回課程列表</a>`;
+    $('#loadError').innerHTML = `${esc(e.message)}　<a href="./">回課程列表</a>`;
     $('#loadError').classList.remove('hidden');
+    $('#loading').classList.add('hidden');
     return;
   }
+  const info = data.info;
+  applySiteInfo(info);
+  $('#loading').classList.add('hidden');
   const c = data.course;
   document.title = `${c.name} - 課後測驗`;
 
@@ -107,17 +110,17 @@
     if (unanswered.length && !confirm(`尚有第 ${unanswered.join('、')} 題未作答，確定要交卷嗎？`)) return;
     if (!unanswered.length && !confirm('確定要交卷嗎？交卷後將無法修改答案。')) return;
     $('#submitBtn').disabled = true;
+    $('#submitBtn').textContent = '評分中…';
     $('#quizError').classList.add('hidden');
     try {
-      const r = await api(`/api/public/courses/${encodeURIComponent(courseId)}/submit`, {
-        method: 'POST', body: { participant: participant(), consent: true, answers, startedAt },
-      });
+      const r = await api('submit', { courseId, participant: participant(), consent: true, answers, startedAt });
       renderResult(r);
     } catch (err) {
       $('#quizError').textContent = err.message;
       $('#quizError').classList.remove('hidden');
     } finally {
       $('#submitBtn').disabled = false;
+      $('#submitBtn').textContent = '交卷';
     }
   });
 
@@ -131,8 +134,8 @@
           <p>恭喜您通過「${esc(c.name)}」課後測驗！（答對 ${r.correctCount} / ${r.questionCount} 題，及格分數 ${r.passScore} 分）</p>
           <p class="muted small">證書編號：<b>${esc(r.certNo)}</b><br>請下載並妥善保存您的合格證書；證書頁面附有本次測驗題目與解答。</p>
           <div class="actions">
-            <a class="btn" href="${esc(r.certificateUrl)}" target="_blank" rel="noopener">檢視／下載合格證書</a>
-            <a class="btn secondary" href="/">回課程列表</a>
+            <a class="btn" href="${esc(certificateUrl(r.attemptId, r.token))}" target="_blank" rel="noopener">檢視／下載合格證書</a>
+            <a class="btn secondary" href="./">回課程列表</a>
           </div>
         </div>`;
     } else {
@@ -151,12 +154,19 @@
           <div class="actions">
             ${r.materialUrl ? `<a class="btn secondary" href="${esc(r.materialUrl)}" target="_blank" rel="noopener">重新閱讀課程教材</a>` : ''}
             <button class="btn" type="button" id="retryBtn">重新測驗</button>
-            <a class="btn secondary" href="/">回課程列表</a>
+            <a class="btn secondary" href="./">回課程列表</a>
           </div>
         </div>`;
       $('#retryBtn').addEventListener('click', async () => {
         // 重新取題（若有設定亂序，題目順序會重新排列）
-        data = await api(`/api/public/courses/${encodeURIComponent(courseId)}/quiz`);
+        $('#retryBtn').disabled = true;
+        try {
+          data = await api('quiz', { courseId });
+        } catch (err) {
+          $('#retryBtn').disabled = false;
+          toast(err.message, true);
+          return;
+        }
         startedAt = new Date().toISOString();
         renderQuestions();
         show('stepQuiz');

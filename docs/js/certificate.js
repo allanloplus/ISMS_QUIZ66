@@ -3,8 +3,9 @@
   const qs = new URLSearchParams(location.search);
   let d;
   try {
-    d = await api(`/api/public/certificates/${encodeURIComponent(qs.get('id') || '')}?t=${encodeURIComponent(qs.get('t') || '')}`);
+    d = await api('certificate', { id: qs.get('id') || '', t: qs.get('t') || '' });
   } catch (e) {
+    $('#loading').classList.add('hidden');
     $('#error .notice').textContent = e.message;
     $('#error').classList.remove('hidden');
     $('#pngBtn').disabled = true;
@@ -12,11 +13,12 @@
     return;
   }
 
+  $('#loading').classList.add('hidden');
   const p = d.participant;
   const c = d.course;
   const issued = new Date(d.createdAt);
   const issuedText = `${issued.getFullYear()} 年 ${issued.getMonth() + 1} 月 ${issued.getDate()} 日`;
-  const verifyUrl = `${location.origin}/verify.html?no=${encodeURIComponent(d.certNo)}`;
+  const verifyUrl = new URL(`verify.html?no=${encodeURIComponent(d.certNo)}`, location.href).href;
   const orgLine = [p.company, p.dept, p.title].filter(Boolean).join('　');
   const courseDetail = [c.date ? `於 ${fmtDate(c.date)}` : '', c.mode ? `參加${c.mode}課程` : '參加'].join(' ');
 
@@ -90,7 +92,14 @@
 
     x.textAlign = 'left'; x.fillStyle = '#444'; x.font = `24px ${SANS}`;
     [`證書編號：${d.certNo}`, `課程類別：${c.categoryName}`, `發證日期：${issuedText}`, `查驗網址：${verifyUrl}`]
-      .forEach((t, i) => x.fillText(t, 150, 1000 + i * 38));
+      .forEach((t, i) => {
+        // 長網址自動縮小字級，避免與講師簽名區重疊
+        for (let size = 24; size >= 14; size--) {
+          x.font = `${size}px ${SANS}`;
+          if (x.measureText(t).width <= 1000) break;
+        }
+        x.fillText(t, 150, 1000 + i * 38);
+      });
 
     x.textAlign = 'center'; x.fillStyle = '#111'; x.font = `700 40px ${SERIF}`;
     x.fillText(c.instructor, 1380, 1060);

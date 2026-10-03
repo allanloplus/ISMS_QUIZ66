@@ -1,18 +1,12 @@
 {
   "name": "isms-quiz",
-  "version": "1.0.0",
-  "description": "ISMS 課程課後測驗網站：後台課程/題庫管理、前台測驗、通過證書產生",
-  "main": "server.js",
+  "version": "2.0.0",
+  "description": "ISMS 課程課後測驗網站（GitHub Pages 前台 + Google Apps Script／試算表後端）",
   "private": true,
   "scripts": {
-    "start": "node server.js",
+    "dev": "node tools/dev-server.js",
     "test": "node --test test/*.test.js"
   },
-  "engines": {
-    "node": ">=18"
-  },
-  "license": "UNLICENSED",
-  "dependencies": {
-    "express": "^5.2.1"
-  }
+  "engines": { "node": ">=18" },
+  "license": "UNLICENSED"
 }
