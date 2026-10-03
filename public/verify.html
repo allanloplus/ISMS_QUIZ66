@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>證書查驗 - ISMS 課程課後測驗</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="inner">
+      <a class="brand" href="/"><span class="logo">ISMS</span><span data-site-name>ISMS 課程課後測驗</span></a>
+      <nav>
+        <a href="/">選擇課程</a>
+        <a href="/verify.html" class="active">證書查驗</a>
+      </nav>
+    </div>
+  </header>
+  <main class="container narrow">
+    <div class="card">
+      <h1>證書查驗</h1>
+      <p class="muted">輸入證書編號，可查驗證書是否由本網站核發（供人資單位或稽核人員確認訓練紀錄）。</p>
+      <form id="form" class="row">
+        <input type="text" id="no" placeholder="例如 ISMS-20261003-0001" style="flex:1;min-width:220px" required>
+        <button class="btn" type="submit">查驗</button>
+      </form>
+      <div id="result" style="margin-top:16px"></div>
+    </div>
+  </main>
+  <script src="/js/common.js"></script>
+  <script src="/js/verify.js"></script>
+</body>
+</html>

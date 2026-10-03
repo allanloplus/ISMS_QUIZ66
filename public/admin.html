@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>後台管理 - ISMS 課程課後測驗</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="inner">
+      <a class="brand" href="/admin.html"><span class="logo">ISMS</span><span>後台管理</span></a>
+      <nav id="adminNav" class="hidden">
+        <a href="#courses" data-view="courses">課程與題庫</a>
+        <a href="#attempts" data-view="attempts">測驗紀錄</a>
+        <a href="#categories" data-view="categories">課程類別</a>
+        <a href="#settings" data-view="settings">系統設定</a>
+        <a href="/" target="_blank" rel="noopener">前台 ↗</a>
+        <a href="#" id="logoutBtn">登出</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 登入 -->
+    <section id="view-login" class="hidden">
+      <form id="loginForm" class="card" style="max-width:420px;margin:40px auto">
+        <h1>管理者登入</h1>
+        <label for="password">管理密碼</label>
+        <input type="password" id="password" autocomplete="current-password" required>
+        <div id="loginError" class="notice error hidden" style="margin-top:12px"></div>
+        <button class="btn block" type="submit" style="margin-top:16px">登入</button>
+      </form>
+    </section>
+
+    <div id="pwWarning" class="notice hidden" style="margin-bottom:16px">⚠ 目前使用預設管理密碼，請至「<a href="#settings">系統設定</a>」立即變更密碼。</div>
+
+    <!-- 課程列表 -->
+    <section id="view-courses" class="hidden">
+      <div class="row" style="margin-bottom:14px">
+        <h1 style="margin:0">課程與題庫</h1><span class="spacer"></span>
+        <button class="btn" id="newCourseBtn" type="button">＋ 新增課程</button>
+      </div>
+      <div class="card table-wrap" style="padding:0">
+        <table class="data">
+          <thead><tr><th>類別</th><th>課程名稱</th><th>上課日期</th><th>講師</th><th>題數／總分</th><th>及格</th><th>測驗人次（通過）</th><th>狀態</th><th>操作</th></tr></thead>
+          <tbody id="courseRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 課程編輯 -->
+    <section id="view-editor" class="hidden">
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn secondary sm" type="button" id="editorBack">← 返回課程列表</button>
+        <h1 style="margin:0" id="editorTitle">編輯課程</h1>
+      </div>
+      <form id="courseForm" novalidate>
+        <div class="card">
+          <h2>課程基本資料</h2>
+          <div class="form-grid">
+            <div><label class="req" for="f_categoryId">課程類別</label><select id="f_categoryId"></select></div>
+            <div class="full"><label class="req" for="f_name">課程名稱</label><input type="text" id="f_name" maxlength="200"></div>
+            <div><label for="f_date">上課日期</label><input type="date" id="f_date"></div>
+            <div><label for="f_instructor">講師名稱</label><input type="text" id="f_instructor" maxlength="100"></div>
+            <div><label for="f_mode">上課方式</label><input type="text" id="f_mode" maxlength="50" list="modeList" placeholder="實體／線上">
+              <datalist id="modeList"><option value="實體"><option value="線上"><option value="實體／線上"></datalist></div>
+            <div><label for="f_hours">課程時數（小時）</label><input type="number" id="f_hours" min="0" step="0.5"></div>
+            <div class="full"><label for="f_description">課程說明</label><textarea id="f_description" maxlength="4000"></textarea></div>
+            <div class="full"><label for="f_materialUrl">課程教材連結（未通過時提供學員重新閱讀，選填）</label><input type="url" id="f_materialUrl" placeholder="https://"></div>
+            <div><label class="req" for="f_passScore">及格分數</label><input type="number" id="f_passScore" min="0" step="1"></div>
+            <div class="full row">
+              <label class="check"><input type="checkbox" id="f_shuffleQuestions"> <span>題目順序隨機</span></label>
+              <label class="check"><input type="checkbox" id="f_shuffleOptions"> <span>選項順序隨機（是非題除外）</span></label>
+              <label class="check"><input type="checkbox" id="f_published"> <span><b>開放前台測驗</b></span></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row" style="margin-bottom:12px">
+            <h2 style="margin:0">測驗題庫</h2><span class="spacer"></span>
+            <button class="btn secondary sm" type="button" id="exportQ">匯出題庫 JSON</button>
+            <label class="btn secondary sm" style="margin:0">匯入題庫 JSON<input type="file" id="importQ" accept="application/json,.json" hidden></label>
+          </div>
+          <div id="qList"></div>
+          <div class="row">
+            <button class="btn secondary" type="button" data-add="single">＋ 單選題</button>
+            <button class="btn secondary" type="button" data-add="multiple">＋ 複選題</button>
+            <button class="btn secondary" type="button" data-add="tf">＋ 是非題</button>
+          </div>
+        </div>
+
+        <div class="score-summary">
+          <span>題數 <b id="sumCount">0</b> 題</span>
+          <span>總分 <b id="sumTotal">0</b> 分</span>
+          <span>及格 <b id="sumPass">0</b></span>
+          <span id="sumWarn" class="warn"></span>
+          <span class="spacer"></span>
+          <span class="row" style="gap:6px">分數分配：平均分配總分
+            <input type="number" id="distTotal" value="100" min="1" style="width:90px">
+            <button class="btn secondary sm" type="button" id="distBtn">套用</button></span>
+          <button class="btn" type="submit" id="saveBtn">儲存課程</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 測驗紀錄 -->
+    <section id="view-attempts" class="hidden">
+      <h1>測驗紀錄</h1>
+      <div class="card">
+        <form id="attemptFilter" class="row">
+          <select id="a_course" style="max-width:320px"></select>
+          <select id="a_status" style="max-width:140px"><option value="">全部結果</option><option value="passed">通過</option><option value="failed">未通過</option></select>
+          <input type="text" id="a_q" placeholder="搜尋公司／姓名／E-mail／證書編號" style="flex:1;min-width:200px">
+          <button class="btn" type="submit">查詢</button>
+          <a class="btn secondary" id="csvBtn" href="#">匯出 CSV</a>
+        </form>
+        <p class="small muted" id="attemptStats" style="margin:10px 0 0"></p>
+      </div>
+      <div class="card table-wrap" style="padding:0">
+        <table class="data">
+          <thead><tr><th>測驗時間</th><th>課程</th><th>公司名稱</th><th>單位</th><th>姓名</th><th>職稱</th><th>E-mail</th><th>得分</th><th>結果</th><th>證書編號</th><th>操作</th></tr></thead>
+          <tbody id="attemptRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 類別 -->
+    <section id="view-categories" class="hidden">
+      <h1>課程類別</h1>
+      <div class="card">
+        <form id="catForm" class="row">
+          <input type="text" id="catName" placeholder="新類別名稱，例如：主管課程" maxlength="50" style="flex:1;min-width:200px">
+          <button class="btn" type="submit">新增類別</button>
+        </form>
+      </div>
+      <div class="card table-wrap" style="padding:0">
+        <table class="data"><thead><tr><th>類別名稱</th><th>課程數</th><th>操作</th></tr></thead><tbody id="catRows"></tbody></table>
+      </div>
+    </section>
+
+    <!-- 設定 -->
+    <section id="view-settings" class="hidden">
+      <h1>系統設定</h1>
+      <form id="settingsForm" class="card">
+        <h2>網站與證書</h2>
+        <div class="form-grid">
+          <div><label for="s_siteName">網站名稱</label><input type="text" id="s_siteName" maxlength="200"></div>
+          <div><label for="s_issuer">發證單位（顯示於證書上方）</label><input type="text" id="s_issuer" maxlength="200"></div>
+          <div><label for="s_certTitle">證書標題</label><input type="text" id="s_certTitle" maxlength="200"></div>
+          <div><label for="s_certPrefix">證書編號字軌（英數）</label><input type="text" id="s_certPrefix" maxlength="16"></div>
+          <div><label for="s_defaultInstructor">預設講師</label><input type="text" id="s_defaultInstructor" maxlength="100"></div>
+          <div class="full"><label for="s_privacyNotice">個人資料蒐集告知事項（顯示於學員填寫資料處）</label><textarea id="s_privacyNotice" style="min-height:140px"></textarea></div>
+        </div>
+        <div class="row" style="margin-top:14px"><span class="spacer"></span><button class="btn" type="submit">儲存設定</button></div>
+      </form>
+      <form id="pwForm" class="card">
+        <h2>變更管理密碼</h2>
+        <div class="form-grid">
+          <div><label for="pw_current">目前密碼</label><input type="password" id="pw_current" autocomplete="current-password"></div>
+          <div><label for="pw_next">新密碼（至少 8 碼）</label><input type="password" id="pw_next" autocomplete="new-password" minlength="8"></div>
+          <div><label for="pw_confirm">確認新密碼</label><input type="password" id="pw_confirm" autocomplete="new-password"></div>
+        </div>
+        <div class="row" style="margin-top:14px"><span class="spacer"></span><button class="btn" type="submit">變更密碼</button></div>
+      </form>
+    </section>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

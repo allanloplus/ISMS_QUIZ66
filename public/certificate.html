@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>合格證書</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/certificate.css">
+</head>
+<body>
+  <div class="toolbar no-print">
+    <div class="inner">
+      <a href="/" class="btn secondary sm">← 回課程列表</a>
+      <span class="spacer"></span>
+      <button class="btn sm" id="pngBtn" type="button">下載證書圖片（PNG）</button>
+      <button class="btn sm" id="printBtn" type="button">列印／另存 PDF（含題目解答）</button>
+    </div>
+  </div>
+
+  <div id="error" class="container narrow hidden"><div class="notice error"></div></div>
+
+  <div id="doc" class="hidden">
+    <section class="cert-page">
+      <div class="cert">
+        <div class="cert-inner">
+          <div class="cert-issuer" id="cIssuer"></div>
+          <h1 class="cert-title" id="cTitle"></h1>
+          <div class="cert-sub">Certificate of Completion</div>
+          <p class="cert-lead">茲證明</p>
+          <div class="cert-name" id="cName"></div>
+          <div class="cert-org" id="cOrg"></div>
+          <p class="cert-body" id="cBody"></p>
+          <div class="cert-foot">
+            <div class="cert-meta" id="cMeta"></div>
+            <div class="cert-sign">
+              <div class="sign-name" id="cInstructor"></div>
+              <div class="sign-line">課程講師</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="answers-page">
+      <h2>附件：課後測驗題目與解答</h2>
+      <div class="answers-meta" id="aMeta"></div>
+      <div id="answers"></div>
+    </section>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/certificate.js"></script>
+</body>
+</html>

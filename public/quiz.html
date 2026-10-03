@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>課後測驗 - ISMS 課程課後測驗</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="inner">
+      <a class="brand" href="/"><span class="logo">ISMS</span><span data-site-name>ISMS 課程課後測驗</span></a>
+      <nav>
+        <a href="/">選擇課程</a>
+        <a href="/verify.html">證書查驗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    <div id="loadError" class="notice error hidden"></div>
+
+    <section id="courseInfo" class="card hidden"></section>
+
+    <!-- 步驟 1：學員資料 -->
+    <form id="stepInfo" class="card hidden" novalidate>
+      <h2>步驟 1／2：填寫學員資料</h2>
+      <p class="muted small">以下資料將用於核發合格證書，請確實填寫。</p>
+      <div class="form-grid">
+        <div><label class="req" for="company">公司名稱</label><input type="text" id="company" name="company" maxlength="200" required autocomplete="organization"></div>
+        <div><label class="req" for="dept">單位</label><input type="text" id="dept" name="dept" maxlength="200" required></div>
+        <div><label class="req" for="name">姓名</label><input type="text" id="name" name="name" maxlength="100" required autocomplete="name"></div>
+        <div><label class="req" for="title">職稱</label><input type="text" id="title" name="title" maxlength="100" required autocomplete="organization-title"></div>
+        <div class="full"><label class="req" for="email">E-mail</label><input type="email" id="email" name="email" maxlength="200" required autocomplete="email"></div>
+        <div class="full">
+          <label>個人資料蒐集告知</label>
+          <div class="notice info privacy" id="privacy"></div>
+          <label class="check" style="margin-top:10px"><input type="checkbox" id="consent"> <span>我已閱讀並同意上述個人資料蒐集、處理及利用之告知事項</span></label>
+        </div>
+      </div>
+      <div id="infoError" class="notice error hidden" style="margin-top:14px"></div>
+      <div class="row" style="margin-top:16px"><span class="spacer"></span><button class="btn" type="submit">開始作答 →</button></div>
+    </form>
+
+    <!-- 步驟 2：作答 -->
+    <form id="stepQuiz" class="hidden" novalidate>
+      <div class="progress"><div class="row small muted" style="margin-bottom:4px"><span id="progressText"></span><span class="spacer"></span><span id="whoText"></span></div><div class="bar"><span id="progressBar"></span></div></div>
+      <div class="card">
+        <h2>步驟 2／2：線上作答</h2>
+        <div id="questions"></div>
+      </div>
+      <div id="quizError" class="notice error hidden" style="margin-bottom:14px"></div>
+      <div class="row"><button class="btn secondary" type="button" id="backToInfo">← 修改學員資料</button><span class="spacer"></span><button class="btn" type="submit" id="submitBtn">交卷</button></div>
+    </form>
+
+    <!-- 結果 -->
+    <section id="stepResult" class="card hidden"></section>
+  </main>
+
+  <footer class="site">課程講師：羅宇倫 Allan Lo</footer>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+/* 證書頁面：螢幕預覽 + A4 列印（證書橫式、附件直式） */
+.toolbar { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+.toolbar .inner { max-width: 1100px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.cert-page { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+.cert { aspect-ratio: 297 / 210; background: #fffdf7; border: 1px solid #d8cfb5; box-shadow: var(--shadow); padding: 2.2%; position: relative; container-type: inline-size; }
+.cert-inner { height: 100%; border: 3px double #1f4e79; outline: 1px solid #b8860b; outline-offset: -10px; padding: 4% 7%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.cert-issuer { color: #1f4e79; font-weight: 700; letter-spacing: .15em; font-size: 2cqi; }
+.cert-title { font-size: 4.6cqi; color: #1f4e79; letter-spacing: .3em; margin: 1.5cqi 0 0; font-family: "Noto Serif TC", "PMingLiU", "Songti TC", serif; }
+.cert-sub { color: #b8860b; letter-spacing: .25em; font-size: 1.4cqi; text-transform: uppercase; }
+.cert-lead { margin: 2.6cqi 0 .5cqi; font-size: 1.8cqi; color: #444; }
+.cert-name { font-size: 4.2cqi; font-weight: 700; border-bottom: 2px solid #b8860b; padding: 0 4cqi .4cqi; font-family: "Noto Serif TC", "PMingLiU", "Songti TC", serif; }
+.cert-org { margin-top: 1cqi; font-size: 1.7cqi; color: #333; }
+.cert-body { margin: 2cqi 0 0; font-size: 1.85cqi; line-height: 1.9; max-width: 85%; }
+.cert-body b { color: #1f4e79; }
+.cert-foot { margin-top: auto; width: 100%; display: flex; justify-content: space-between; align-items: flex-end; gap: 4cqi; }
+.cert-meta { text-align: left; font-size: 1.35cqi; color: #444; line-height: 1.8; }
+.cert-sign { text-align: center; min-width: 26%; }
+.cert-sign .sign-name { font-size: 2.2cqi; font-family: "Noto Serif TC", "PMingLiU", "Songti TC", serif; font-weight: 700; padding-bottom: .4cqi; }
+.cert-sign .sign-line { border-top: 1px solid #333; padding-top: .4cqi; font-size: 1.35cqi; color: #444; }
+
+.answers-page { max-width: 1100px; margin: 24px auto 60px; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.answers-meta { color: var(--muted); font-size: .9rem; margin-bottom: 14px; }
+.ans-q { border-top: 1px solid var(--border); padding: 12px 0; break-inside: avoid; }
+.ans-q .qhead { display: flex; gap: 8px; }
+.ans-q .qhead .qno { font-weight: 700; color: var(--primary); min-width: 2em; }
+.ans-q .qhead .qtext { font-weight: 600; flex: 1; white-space: pre-wrap; }
+.ans-q ul { list-style: none; margin: 6px 0 0 2em; padding: 0; }
+.ans-q li { padding: 2px 6px; border-radius: 4px; }
+.ans-q li.correct { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.ans-q li.wrong-pick { background: var(--bad-soft); color: var(--bad); }
+.ans-q .summary { margin: 6px 0 0 2em; font-size: .9rem; }
+.ans-q .explain { margin: 4px 0 0 2em; font-size: .88rem; color: var(--muted); white-space: pre-wrap; }
+
+@media print {
+  @page { size: A4 portrait; margin: 14mm; }
+  @page cert { size: A4 landscape; margin: 8mm; }
+  @page answers { size: A4 portrait; margin: 14mm; }
+  body { background: #fff; font-size: 11pt; }
+  .no-print { display: none !important; }
+  .cert-page { page: cert; max-width: none; margin: 0; padding: 0; }
+  .cert { box-shadow: none; width: 281mm; height: 194mm; aspect-ratio: auto; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .answers-page { page: answers; break-before: page; max-width: none; margin: 0; padding: 0; border: 0; }
+  .ans-q li.correct, .ans-q li.wrong-pick { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
