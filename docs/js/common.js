@@ -82,6 +82,12 @@ async function loadSiteInfo() {
   }
 }
 
+/** 只允許 http(s) 連結，避免 javascript: 等危險網址 */
+function safeUrl(u) {
+  const s = String(u || '').trim();
+  return /^https?:\/\//i.test(s) ? s : '';
+}
+
 function certificateUrl(id, token) {
   return `certificate.html?id=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`;
 }

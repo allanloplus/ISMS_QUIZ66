@@ -36,6 +36,7 @@
           <div>題數：${c.questionCount} 題　總分 ${c.totalPoints} 分　及格 ${c.passScore} 分</div>
         </div>
         <p class="desc">${esc(c.description)}</p>
+        ${safeUrl(c.materialUrl) ? `<a class="btn secondary block material-link" href="${esc(safeUrl(c.materialUrl))}" target="_blank" rel="noopener">📖 課程教材連結</a>` : ''}
         <a class="btn block" href="quiz.html?course=${encodeURIComponent(c.id)}">開始課後測驗</a>
       </article>`).join('');
   }

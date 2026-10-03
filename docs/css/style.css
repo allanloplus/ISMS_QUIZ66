@@ -63,6 +63,7 @@ h3 { font-size: 1.05rem; }
 .course-card .meta { font-size: .9rem; color: var(--muted); margin: 0 0 12px; }
 .course-card .meta div { margin: 2px 0; }
 .course-card .desc { font-size: .93rem; flex: 1; }
+.course-card .material-link { margin-bottom: 8px; }
 .badge { display: inline-block; font-size: .78rem; padding: 2px 10px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 .badge.ok { background: var(--ok-soft); color: var(--ok); }
 .badge.bad { background: var(--bad-soft); color: var(--bad); }

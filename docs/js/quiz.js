@@ -28,6 +28,8 @@
       ${c.date ? `上課日期：${esc(fmtDate(c.date))}　` : ''}講師：${esc(c.instructor)}
       ${c.mode ? `　上課方式：${esc(c.mode)}` : ''}${c.hours ? `　時數：${esc(c.hours)} 小時` : ''}
     </div>
+    ${c.description ? `<p class="small" style="margin:10px 0 0">${esc(c.description)}</p>` : ''}
+    ${safeUrl(c.materialUrl) ? `<p style="margin:10px 0 0"><a class="btn secondary sm" href="${esc(safeUrl(c.materialUrl))}" target="_blank" rel="noopener">📖 課程教材連結</a></p>` : ''}
     <div class="notice info" style="margin-top:12px">本測驗共 <b>${c.questionCount}</b> 題，總分 <b>${c.totalPoints}</b> 分，達 <b>${c.passScore}</b> 分（含）以上即為通過。複選題須全部答對才給分。</div>`;
   $('#courseInfo').classList.remove('hidden');
 
@@ -158,7 +160,7 @@
             </ol>
           </div>
           <div class="actions">
-            ${r.materialUrl ? `<a class="btn secondary" href="${esc(r.materialUrl)}" target="_blank" rel="noopener">重新閱讀課程教材</a>` : ''}
+            ${safeUrl(r.materialUrl) ? `<a class="btn secondary" href="${esc(safeUrl(r.materialUrl))}" target="_blank" rel="noopener">重新閱讀課程教材</a>` : ''}
             <button class="btn" type="button" id="retryBtn">重新測驗</button>
             <a class="btn secondary" href="./">回課程列表</a>
           </div>
