@@ -10,7 +10,7 @@ const ROOT = path.join(__dirname, '..', 'docs');
 const PORT = Number(process.env.PORT) || 8080;
 const BASE = (process.env.BASE_PATH || '').replace(/\/$/, ''); // 例如 /ISMS_QUIZ66，模擬 GitHub Pages 子路徑
 const gas = createGas();
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 
 http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
@@ -32,8 +32,9 @@ http.createServer((req, res) => {
   }
   // 本機預覽時改用 /api 作為後端網址
   if (pathname === '/js/config.js') {
+    const cfg = fs.readFileSync(path.join(ROOT, 'js', 'config.js'), 'utf8').replace(/API_URL:\s*'[^']*'/, "API_URL: '/api'");
     res.writeHead(200, { 'Content-Type': TYPES['.js'] });
-    res.end("window.ISMS_CONFIG = { API_URL: '/api' };");
+    res.end(cfg);
     return;
   }
   let file = path.normalize(path.join(ROOT, decodeURIComponent(pathname)));

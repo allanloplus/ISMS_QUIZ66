@@ -34,6 +34,18 @@
     `證書編號：${esc(d.certNo)}<br>課程類別：${esc(c.categoryName)}<br>發證日期：${esc(issuedText)}<br>` +
     `查驗網址：${esc(verifyUrl)}`;
   $('#cInstructor').textContent = c.instructor;
+  const signSrc = signatureFor(c.instructor);
+  let signImg = null;
+  if (signSrc) {
+    // 有簽名圖檔：簽名在線上，講師姓名移至線下
+    signImg = await loadImage(signSrc).catch(() => null);
+    if (signImg) {
+      $('#cSignImg').src = signSrc;
+      $('#cSignImg').classList.remove('hidden');
+      $('#cInstructor').classList.add('hidden');
+      $('.sign-line').textContent = `課程講師　${c.instructor}`;
+    }
+  }
 
   $('#aMeta').innerHTML =
     `課程：${esc(c.name)}｜學員：${esc(p.company)} ${esc(p.dept)} ${esc(p.name)}（${esc(p.title)}）｜` +
@@ -101,10 +113,18 @@
         x.fillText(t, 150, 1000 + i * 38);
       });
 
-    x.textAlign = 'center'; x.fillStyle = '#111'; x.font = `700 40px ${SERIF}`;
-    x.fillText(c.instructor, 1380, 1060);
+    x.textAlign = 'center';
+    if (signImg) {
+      const sh = 215;
+      const sw = (signImg.naturalWidth / signImg.naturalHeight) * sh;
+      x.drawImage(signImg, 1380 - sw / 2, 1080 - sh + 8, sw, sh);
+    } else {
+      x.fillStyle = '#111'; x.font = `700 40px ${SERIF}`;
+      x.fillText(c.instructor, 1380, 1060);
+    }
     x.strokeStyle = '#333'; x.lineWidth = 2; x.beginPath(); x.moveTo(1190, 1080); x.lineTo(1570, 1080); x.stroke();
-    x.fillStyle = '#444'; x.font = `24px ${SANS}`; x.fillText('課程講師', 1380, 1115);
+    x.fillStyle = '#444'; x.font = `24px ${SANS}`;
+    x.fillText(signImg ? `課程講師　${c.instructor}` : '課程講師', 1380, 1115);
 
     cv.toBlob((blob) => {
       const a = document.createElement('a');
@@ -114,6 +134,22 @@
       a.click();
       setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     }, 'image/png');
+  }
+
+  function signatureFor(name) {
+    const map = (window.ISMS_CONFIG && window.ISMS_CONFIG.SIGNATURES) || {};
+    const n = String(name || '').trim();
+    const key = Object.keys(map).find((k) => n && n.includes(k));
+    return key ? map[key] : '';
+  }
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
   }
 
   function spaced(s, ratio) {

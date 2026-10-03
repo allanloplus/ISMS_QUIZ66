@@ -17,6 +17,7 @@
 .cert-meta { text-align: left; font-size: 1.35cqi; color: #444; line-height: 1.8; }
 .cert-sign { text-align: center; min-width: 26%; }
 .cert-sign .sign-name { font-size: 2.2cqi; font-family: "Noto Serif TC", "PMingLiU", "Songti TC", serif; font-weight: 700; padding-bottom: .4cqi; }
+.cert-sign .sign-img { display: block; height: 9cqi; width: auto; margin: 0 auto -.4cqi; }
 .cert-sign .sign-line { border-top: 1px solid #333; padding-top: .4cqi; font-size: 1.35cqi; color: #444; }
 
 .answers-page { max-width: 1100px; margin: 24px auto 60px; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
